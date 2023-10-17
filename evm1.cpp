@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <time.h>
+#include <math.h>
 #include "matrix_solver.h"
 #include "matrix_reader.h"
 
@@ -13,9 +14,7 @@ void init_B(double *A, double *B, int n)
         temp = 0;
 
         for (int j = 0; j < n; j += 2)
-        {
             temp += A[i * n + j];
-        }
 
         B[i] = temp;
     }
@@ -27,36 +26,103 @@ void print_mat(double *A, int n, int m, int p)
     for (int i = 0; i < n && i < p; i++)
     {
         for (int j = 0; j < m && j < p; j++)
-        {
             printf("%10.3e ", A[i * m + j]);
-        }
 
         printf("\n");
     }
 }
 
-//calculating resid
-double res_ctr(double *A, double *B, double *X, int n)
+double *count_norm_err(double *A, int n)
 {
-    double sum = 0.;
-    double sum_str = 0.;
-    double norm_b = 0.;
-    
+    double *X = nullptr;
+    X = new double[n];
+
+    double *vec = nullptr;
+    vec = new double[n];
+
+    double *Y = nullptr;
+    Y = new double[n];
+
+    for (int i = 0; i < n; i++)
+        if (i % 2 == 0)
+            X[i] = 1;
+        else
+            X[i] = 0;
+
     for (int i = 0; i < n; i++)
     {
-        sum_str = 0.;
+        Y[i] = 0.;
+
         for (int j = 0; j < n; j++)
-        {
-            sum_str += A[i * n + j] * X[j];
-        }
-        
-        sum += f_abs(sum_str - B[i]);
-        norm_b += f_abs(B[i]);
+            Y[i] += A[i * n + j] * X[j];
     }
     
-    return (norm_b > EPS ? sum / norm_b : 0);
+    int res = 0;
+    res = solve(A, Y, vec, n);
+
+    if (res)
+    {
+        delete [] X;
+        delete [] Y;
+        printf ("Impossible to find the solution\n");
+
+        return nullptr;
+    }
+
+    for (int i = 0; i < n; i++)
+        vec[i] = vec[i] - X[i];
+
+    delete [] X;
+    delete [] Y;
+
+    return vec;
 }
 
+double norm1(double *vec, int n) 
+{
+    double res = 0;
+
+    for(int i = 0; i < n; i++) 
+        res += f_abs(vec[i]);
+    
+    return res;
+}
+
+double res_ctr1(double *A, double *B, double *X, int n)
+{
+    return (norm1(B, n) > EPS ? norm1(X, n) / norm1(B, n) : 0);
+}
+
+double norm2(double *vec, int n) 
+{
+    double res = 0;
+
+    for(int i = 0; i < n; i++) 
+        res += vec[i] * vec[i];
+    
+    return sqrt(res);
+}
+
+double res_ctr2(double *A, double *B, double *X, int n)
+{
+    return (norm2(B, n) > EPS ? norm2(X, n) / norm2(B, n) : 0);
+}
+
+double norminf(double *vec, int n) 
+{
+    double res = 0;
+
+    for(int i = 0; i < n; i++) 
+        if(f_abs(vec[i]) > res) 
+            res = f_abs(vec[i]);
+
+    return res;
+}
+
+double res_ctrinf(double *A, double *B, double *X, int n)
+{
+    return (norminf(B, n) > EPS ? norminf(X, n) / norminf(B, n) : 0);
+}
 
 int main(int argc, char *argv[])
 {
@@ -120,18 +186,14 @@ int main(int argc, char *argv[])
 
     //printing matrix a
     for (int i = 0; i < m; i++)
-    {
         printf("===========");
-    }
 
     printf("\nA = \n");
     print_mat (A, n, n, m);
     
     //printing vector b
     for (int i = 0; i < m; i++)
-    {
         printf("===========");
-    }    
 
     printf("\nB = \n");
     print_mat (B, 1, n, m);
@@ -154,9 +216,7 @@ int main(int argc, char *argv[])
 
     //printing solution vector x
     for (int i = 0; i < m; i++)
-    {
         printf("===========");
-    }     
 
     printf("\nX = \n");
     print_mat(X, 1, n, m);
@@ -179,13 +239,21 @@ int main(int argc, char *argv[])
    
     init_B(A, B, n);
 
-    double resid = 0.;
-    //t2 = clock();
-    resid = res_ctr(A, B, X, n);
-    //t2 = (clock() - t2) / CLOCKS_PER_SEC;
- 
-    //printf ("%s : Res = %e T1 = %.2f T2 = %.2f K = %d N = %d M = %d\n", argv[0], resid, t1, t2, k, n, m);
-    printf ("%s : Res = %e T1 = %.2f K = %d N = %d M = %d\n", argv[0], resid, t1, k, n, m);
+    double resid1, resid2, residinf, nrmer1, nrmer2, nrmerinf = 0.;
+
+    resid1 = res_ctr1(A, B, X, n);
+    resid2 = res_ctr2(A, B, X, n);
+    residinf = res_ctrinf(A, B, X, n); 
+
+    double *vec = nullptr;
+    vec = new double[n];
+    vec = count_norm_err(A, n);
+
+    nrmer1 = norm1(vec, n);
+    nrmer2 = norm2(vec, n);
+    nrmerinf = norminf(vec, n);
+    
+    printf ("%s : NormErr1 = %e, NormErr2 = %e, NormErrinf = %e, Res1 = %e, Res2 = %e, Resinf = %e, T1 = %.2f K = %d N = %d M = %d\n", argv[0], nrmer1, nrmer2, nrmerinf, resid1, resid2, residinf, t1, k, n, m);
 
     delete [] A;
     delete [] B;

@@ -25,12 +25,8 @@ double f(int i, int j, int n, int mode)
 void inint_A_form(double *A, int n, int k)
 {
     for (int i = 0; i < n; i++)
-    {
         for (int j = 0; j < n; j++)
-          {
             A[i * n + j] = f(i, j, n, k);
-          }
-    }
 }
 
 //reading matrix from a file
@@ -42,16 +38,12 @@ int inint_A_file(double *A, int n, char *file)
       return 1;
 
     for (int i = 0; i < n; i++)
-    {
         for (int j = 0; j < n; j++)
-        {
             if (fscanf(in, "%lf", A + i * n + j) != 1)
             {
                 fclose(in);
                 return 2;
             }
-        }
-    }
 
     fclose (in);
     return 0;

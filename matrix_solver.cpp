@@ -14,9 +14,7 @@ void reverse_stroke(double *A, double *B, double *X, int n)
         src = B[i];
 
         for (int j = n - 1; j > i; j--)
-        {
             src -= A[i * n + j] * X[j];
-        }
 
         X[i] = src;
     }
@@ -34,13 +32,11 @@ int solve(double *A, double *B, double *X, int n)
         maxx = f_abs(A[steps * n + steps]);
 
         for (int i = steps; i < n; i++)
-        {
             if (f_abs(A[steps + i * n]) > maxx)
             {
                 maxx = f_abs(A[steps + i * n]);
                 ind_max = i;
             }
-        }
 
         if (maxx < EPS)
             return -1;
@@ -62,17 +58,13 @@ int solve(double *A, double *B, double *X, int n)
         B[steps] *= mnoz;
         
         for (int j = steps; j < n; j++)
-        {
             A[steps * n + j] *= mnoz;
-        }
         
         for (int i = steps + 1; i < n; i++)
         {
             mnoz = A[i * n + steps];
             for (int j = steps; j < n; j++)
-            {
                 A[i * n + j] -= mnoz * A[steps * n + j];
-            }
             
             B[i] -= mnoz * B[steps];
         }
