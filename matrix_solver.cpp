@@ -3,6 +3,8 @@
 #include <mutex>
 using namespace std;
 
+const int THREAD_NUMBER = 16;
+
 double f_abs(double a)
 {
     return (a > 0 ? a : -a);
@@ -79,7 +81,7 @@ int solve(double *A, double *B, double *X, int n)
         //removing all the column with this Xsteps below by
         //subtracting steps row from all the rows below 
         //mnoz times (mnoz becomes equal to Xsteps i for all
-        //the is below Xsteps i'm so tired rn fuck
+        //the is below Xsteps
         for (int i = steps + 1; i < n; i++)
         {
             mnoz = A[i * n + steps];
@@ -96,18 +98,21 @@ int solve(double *A, double *B, double *X, int n)
     return 0;
 }
 
-void par_sub(double mnoz, double *A, double *B, int n, int i, int steps)
-{ 
-    mnoz = A[i * n + steps];
-    for (int j = steps; j < n; j++)
-        A[i * n + j] -= mnoz * A[steps * n + j];
+void par_sub(double mnoz, double *A, double *B, int cap, int n, int steps)
+{   
+    for (int i = steps + 1; i < cap; i++)
+    {
+        mnoz = A[i * n + steps];
+        for (int j = steps; j < n; j++)
+            A[i * n + j] -= mnoz * A[steps * n + j];
             
-    B[i] -= mnoz * B[steps];
+        B[i] -= mnoz * B[steps];
+    }
 }
 
 void par_print()
 {
-    printf("parprint\n");
+    printf("parpuruin\n");
 }
 
 //preparing matrix to solve by making it triangular
@@ -166,9 +171,10 @@ int parallel_solve(double *A, double *B, double *X, int n)
         //subtracting steps row from all the rows below 
         //mnoz times (mnoz becomes equal to Xsteps i for all
         //the is below Xsteps
+        const int CAP = n / THREAD_NUMBER;
         vector<thread> threads;
-        for (int i = steps + 1; i < n; i++)
-            threads.push_back(thread(par_sub, mnoz, A, B, n, i, steps)); 
+        for (int i = 0; i < THREAD_NUMBER; i++)
+            threads.push_back(thread(par_sub, mnoz, A, B, (i+1)*CAP, n, steps)); 
             //threads.push_back(thread(par_print));
 
         for (int i = 0; i < threads.size(); ++i)

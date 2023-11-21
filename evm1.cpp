@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
+#include <chrono>
 #include "matrix_solver.h"
 #include "matrix_reader.h"
 
@@ -160,7 +161,6 @@ int main(int argc, char *argv[])
         return 0;
     }
     
-    double t1 = 0.;
     int res = 0;
     char *file = nullptr;
     
@@ -186,22 +186,23 @@ int main(int argc, char *argv[])
 
     //printing matrix a
     for (int i = 0; i < m; i++)
-        printf("===========");
+        printf("-----------");
 
     printf("\nA = \n");
     print_mat(A, n, n, m);
     
     //printing vector b
     for (int i = 0; i < m; i++)
-        printf("===========");
+        printf("-----------");
 
     printf("\nB = \n");
     print_mat(B, 1, n, m);
 
     //solving matrix
-    t1 = clock();
+    auto start = std::chrono::high_resolution_clock::now();
     res = parallel_solve(A, B, X, n);
-    t1 = (clock() - t1) / CLOCKS_PER_SEC;
+    auto end = std::chrono::high_resolution_clock::now();
+    auto t1 = std::chrono::duration<double, std::milli>(end - start).count();
     
     //printing error if we can't find the solution
     if (res)
@@ -216,12 +217,12 @@ int main(int argc, char *argv[])
 
     //printing solution vector x
     for (int i = 0; i < m; i++)
-        printf("===========");
+        printf("-----------");
 
-    //initializing matrix again to find the error
     printf("\nX = \n");
     print_mat(X, 1, n, m);
   
+    //initializing matrix again to find the error
     if (k)
         inint_A_form (A, n, k);
     else
@@ -240,6 +241,7 @@ int main(int argc, char *argv[])
    
     init_B(A, B, n);
 
+    //counting all the resids and norms
     double resid1, resid2, residinf, nrmer1, nrmer2, nrmerinf = 0.;
 
     resid1 = res_ctr1(A, B, X, n);
@@ -253,9 +255,39 @@ int main(int argc, char *argv[])
     nrmer1 = norm1(vec, n);
     nrmer2 = norm2(vec, n);
     nrmerinf = norminf(vec, n);
-    
-    printf ("%s : NormErr1 = %e, NormErr2 = %e, NormErrinf = %e, Res1 = %e, Res2 = %e, Resinf = %e, T1 = %.2f K = %d N = %d M = %d\n", argv[0], nrmer1, nrmer2, nrmerinf, resid1, resid2, residinf, t1, k, n, m);
 
+    //finding time to solve for single-threaded version
+    //initializing matrix and b
+
+    if (k)
+        inint_A_form (A, n, k);
+    else
+    {
+        file = argv[4];
+        res = inint_A_file(A, n, file);
+        if (res)
+        {
+            delete [] A;
+            delete [] B;
+            delete [] X;
+            printf("ERROR: Wrong file\n");
+            return 0;
+        }
+    }    
+   
+    init_B(A, B, n);
+    
+    start = std::chrono::high_resolution_clock::now();
+    res = solve(A, B, X, n);
+    end = std::chrono::high_resolution_clock::now();
+    auto t2 = std::chrono::duration<double, std::milli>(end - start).count();
+    
+    //printing all the necessary stuff
+    for (int i = 0; i < m; i++)
+        printf("-----------");
+    printf ("\n%s : \nNormErr1 = %e, NormErr2 = %e, NormErrinf = %e, \nRes1 = %e, Res2 = %e, Resinf = %e, \nTime parallel = %.5f, Time single = %.5f, \nK = %d, N = %d, M = %d\n", argv[0], nrmer1, nrmer2, nrmerinf, resid1, resid2, residinf, t1, t2, k, n, m);
+
+    //cleaning up the memory
     delete [] A;
     delete [] B;
     delete [] X;
