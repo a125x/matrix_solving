@@ -9,5 +9,6 @@ void reverse_stroke(double *A, double *B, double *X, int n);
 
 //solving matrix a with values b and writing results to x
 int solve(double *A, double *B, double *X, int n);
+int parallel_solve(double *A, double *B, double *X, int n);
 
 #endif

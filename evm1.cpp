@@ -58,7 +58,7 @@ double *count_norm_err(double *A, int n)
     }
     
     int res = 0;
-    res = solve(A, Y, vec, n);
+    res = parallel_solve(A, Y, vec, n);
 
     if (res)
     {
@@ -189,18 +189,18 @@ int main(int argc, char *argv[])
         printf("===========");
 
     printf("\nA = \n");
-    print_mat (A, n, n, m);
+    print_mat(A, n, n, m);
     
     //printing vector b
     for (int i = 0; i < m; i++)
         printf("===========");
 
     printf("\nB = \n");
-    print_mat (B, 1, n, m);
+    print_mat(B, 1, n, m);
 
     //solving matrix
     t1 = clock();
-    res = solve(A, B, X, n);
+    res = parallel_solve(A, B, X, n);
     t1 = (clock() - t1) / CLOCKS_PER_SEC;
     
     //printing error if we can't find the solution
@@ -218,6 +218,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < m; i++)
         printf("===========");
 
+    //initializing matrix again to find the error
     printf("\nX = \n");
     print_mat(X, 1, n, m);
   
