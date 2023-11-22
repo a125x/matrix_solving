@@ -1,6 +1,7 @@
 #include "matrix_solver.h"
 #include <thread>
 #include <mutex>
+#include <vector>
 using namespace std;
 
 const int THREAD_NUMBER = 16;
@@ -185,5 +186,3 @@ int parallel_solve(double *A, double *B, double *X, int n)
     reverse_stroke (A, B, X, n);
     return 0;
 }
-
-
