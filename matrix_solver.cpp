@@ -2,9 +2,10 @@
 #include <thread>
 #include <mutex>
 #include <vector>
+#include <iostream>
 using namespace std;
 
-const int THREAD_NUMBER = 16;
+const int THREAD_NUMBER = 4;
 
 double f_abs(double a)
 {
@@ -99,9 +100,9 @@ int solve(double *A, double *B, double *X, int n)
     return 0;
 }
 
-void par_sub(double mnoz, double *A, double *B, int cap, int n, int steps)
+void par_sub(double mnoz, double *A, double *B, int start, int cap, int n, int steps)
 {   
-    for (int i = steps + 1; i < cap; i++)
+    for (int i = start; i < cap; i++)
     {
         mnoz = A[i * n + steps];
         for (int j = steps; j < n; j++)
@@ -172,11 +173,23 @@ int parallel_solve(double *A, double *B, double *X, int n)
         //subtracting steps row from all the rows below 
         //mnoz times (mnoz becomes equal to Xsteps i for all
         //the is below Xsteps
-        const int CAP = n / THREAD_NUMBER;
+        const int GAP = (n - steps) / THREAD_NUMBER;
+        int start = steps+1;
+        int end = start + GAP;
+        //std::cout << '\n' << "GAP: " << GAP << " Start: " << start << " End: " << end << '\n';
         vector<thread> threads;
         for (int i = 0; i < THREAD_NUMBER; i++)
-            threads.push_back(thread(par_sub, mnoz, A, B, (i+1)*CAP, n, steps)); 
+        {
+            threads.push_back(thread(par_sub, mnoz, A, B, start, end, n, steps));
             //threads.push_back(thread(par_print));
+            start += GAP;
+            if (end + GAP < n)
+                end += GAP;
+            else
+                end = n;
+
+            //std::cout << '\n' << "GAP: " << GAP << " Start: " << start << " End: " << end << '\n';
+        }
 
         for (int i = 0; i < threads.size(); ++i)
             threads[i].join();
