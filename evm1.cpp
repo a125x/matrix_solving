@@ -33,7 +33,7 @@ void print_mat(double *A, int n, int m, int p)
     }
 }
 
-double *count_norm_err(double *A, int n)
+double *count_norm_err(double *A, int n, int THREAD_NUMBER)
 {
     double *X = nullptr;
     X = new double[n];
@@ -59,7 +59,7 @@ double *count_norm_err(double *A, int n)
     }
     
     int res = 0;
-    res = parallel_solve(A, Y, vec, n);
+    res = parallel_solve(A, Y, vec, n, THREAD_NUMBER);
 
     if (res)
     {
@@ -132,18 +132,22 @@ int main(int argc, char *argv[])
 
     //n is matrix dimentions, m is amount of outputs of matrix,
     //k is a formula number
-    int n = 0, k = 0, m = 0;
+    int n = 0, k = 0, m = 0, t = 0;
 
     //checking if input data are correct
-    if (!((argc == 4 || argc == 5) 
+    if (!((argc == 5 || argc == 6) 
         && (sscanf(argv[1], "%d", &n) == 1) && (n > 0)
         && (sscanf(argv[2], "%d", &m) == 1)
-        && (sscanf(argv[3], "%d", &k) == 1)
-        && ((k == 0 && argc == 5) || (k > 0 && k <= 4 && argc == 4))))
+        && (sscanf(argv[3], "%d", &t) == 1)
+        && (sscanf(argv[4], "%d", &k) == 1)
+        && ((k == 0 && argc == 6) || (k > 0 && k <= 4 && argc == 5))))
     {
-        printf ("Usage: %s n m k [file]\n", argv[0]);
+        printf ("Usage: %s n m t k [file]\n", argv[0]);
         return 0;
     }
+
+    int THREAD_NUMBER = t;
+    //int THREAD_NUMBER = 8;
     
     //creating matrix a, vector b and vector of solutions x
     A = new double[n * n];
@@ -200,7 +204,7 @@ int main(int argc, char *argv[])
 
     //solving matrix
     auto start = std::chrono::high_resolution_clock::now();
-    res = parallel_solve(A, B, X, n);
+    res = parallel_solve(A, B, X, n, THREAD_NUMBER);
     auto end = std::chrono::high_resolution_clock::now();
     auto t1 = std::chrono::duration<double, std::milli>(end - start).count();
     
@@ -250,7 +254,7 @@ int main(int argc, char *argv[])
 
     double *vec = nullptr;
     vec = new double[n];
-    vec = count_norm_err(A, n);
+    vec = count_norm_err(A, n, THREAD_NUMBER);
 
     nrmer1 = norm1(vec, n);
     nrmer2 = norm2(vec, n);
@@ -278,14 +282,14 @@ int main(int argc, char *argv[])
     init_B(A, B, n);
     
     start = std::chrono::high_resolution_clock::now();
-    res = solve(A, B, X, n);
+    //res = solve(A, B, X, n);
     end = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::duration<double, std::milli>(end - start).count();
     
     //printing all the necessary stuff
     for (int i = 0; i < m; i++)
         printf("-----------");
-    printf ("\n%s : \nNormErr1 = %e, NormErr2 = %e, NormErrinf = %e, \nRes1 = %e, Res2 = %e, Resinf = %e, \nTime parallel = %.5f, Time single = %.5f, \nK = %d, N = %d, M = %d\n", argv[0], nrmer1, nrmer2, nrmerinf, resid1, resid2, residinf, t1, t2, k, n, m);
+    printf ("\n%s : \nNormErr1 = %e, NormErr2 = %e, NormErrinf = %e; \nRes1 = %e, Res2 = %e, Resinf = %e; \nTime parallel = %.5f; \nK = %d, N = %d, M = %d, T = %d.\n", argv[0], nrmer1, nrmer2, nrmerinf, resid1, resid2, residinf, t1, k, n, m, t);
 
     //cleaning up the memory
     delete [] A;

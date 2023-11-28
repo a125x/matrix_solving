@@ -5,31 +5,58 @@
 #include <iostream>
 using namespace std;
 
-const int THREAD_NUMBER = 4;
+//const int THREAD_NUMBER = 8;
 
 double f_abs(double a)
 {
     return (a > 0 ? a : -a);
 }
 
-//finding the solution of the given triangular matrix
-void reverse_stroke(double *A, double *B, double *X, int n)
+void par_back(double *A, double *B, double *X, int n, int start, int end)
 {
     double src = 0.;
 
-    for (int i = n - 1; i >= 0; i--)
+    for (int i = start; i >= end; i--)
     {
         src = B[i];
-
+        
         for (int j = n - 1; j > i; j--)
             src -= A[i * n + j] * X[j];
-
+        
         X[i] = src;
     }
 }
 
+//finding the solution of the given triangular matrix
+void reverse_stroke(double *A, double *B, double *X, int n, int THREAD_NUMBER)
+{
+    const int GAP = n / THREAD_NUMBER;
+    int start = n-1;
+    int end = start;
+    if (end - GAP < n)
+            end -= GAP;
+        else
+            end = 0;
+
+    vector<thread> threads;
+    
+    for (int i = 0; i < THREAD_NUMBER; i++)
+    {
+        threads.push_back(thread(par_back, A, B, X, n, start, end));
+        start -= GAP;
+        if (end - GAP < n)
+            end -= GAP;
+        else
+            end = 0;
+    }
+
+    for (int i = 0; i < threads.size(); ++i)
+        threads[i].join();
+
+}
+
 //preparing matrix to solve by making it triangular
-int solve(double *A, double *B, double *X, int n)
+int solve(double *A, double *B, double *X, int n, int THREAD_NUMBER)
 {
     //maxx is a maximal element in the column
     //and ind_max is its index
@@ -95,7 +122,7 @@ int solve(double *A, double *B, double *X, int n)
     }
     
     //solving prepared matrix
-    reverse_stroke (A, B, X, n);
+    reverse_stroke(A, B, X, n, THREAD_NUMBER);
     
     return 0;
 }
@@ -112,13 +139,18 @@ void par_sub(double mnoz, double *A, double *B, int start, int cap, int n, int s
     }
 }
 
-void par_print()
+void par_max(double tmp, int ind_max, double *A, double *B, int start, int cap, int n, int steps)
 {
-    printf("parpuruin\n");
+    for (int j = start; j < cap; j++)
+    {
+        tmp = A[ind_max * n + j];
+        A[ind_max * n + j] = A[steps * n + j];
+        A[steps * n + j] = tmp;
+    }
 }
 
 //preparing matrix to solve by making it triangular
-int parallel_solve(double *A, double *B, double *X, int n)
+int parallel_solve(double *A, double *B, double *X, int n, int THREAD_NUMBER)
 {
     //maxx is a maximal element in the column
     //and ind_max is its index
@@ -144,6 +176,16 @@ int parallel_solve(double *A, double *B, double *X, int n)
         if (maxx < EPS)
             return -1;
 
+        const int GAP = (n - steps) / THREAD_NUMBER;
+        int start = steps+1;
+        int end = start;
+        if (end + GAP < n)
+                    end += GAP;
+                else
+                    end = n;
+
+        vector<thread> threads_max;
+                
         //if choosen max element is not already what we're 
         //working with, changing its position to the current one
         if (ind_max != steps)
@@ -151,14 +193,23 @@ int parallel_solve(double *A, double *B, double *X, int n)
             double tmp = B[steps];
             B[steps] = B[ind_max];
             B[ind_max] = tmp;
-            for (int j = steps; j < n; j++)
+            
+            for (int i = 0; i < THREAD_NUMBER; i++)
             {
-                tmp = A[ind_max * n + j];
-                A[ind_max * n + j] = A[steps * n + j];
-                A[steps * n + j] = tmp;
+                threads_max.push_back(thread(par_max, tmp, ind_max, A, B, start, end, n, steps));
+                start += GAP;
+                if (end + GAP < n)
+                    end += GAP;
+                else
+                    end = n;
+                //std::cout << '\n' << "GAP: " << GAP << " Start: " << start << " End: " << end << '\n';
             }
+
+            for (int i = 0; i < threads_max.size(); ++i)
+            threads_max[i].join();
+
         }
-    
+        
         //mnoz is equal to the element on the diagonal on the
         //steps row to the power of -1 and multiplying matrix
         //row and the answer to it creating nice 1-equal 
@@ -173,15 +224,19 @@ int parallel_solve(double *A, double *B, double *X, int n)
         //subtracting steps row from all the rows below 
         //mnoz times (mnoz becomes equal to Xsteps i for all
         //the is below Xsteps
-        const int GAP = (n - steps) / THREAD_NUMBER;
-        int start = steps+1;
-        int end = start + GAP;
+        start = steps+1;
+        end = start;
+        if (end + GAP < n)
+                    end += GAP;
+                else
+                    end = n;
+
         //std::cout << '\n' << "GAP: " << GAP << " Start: " << start << " End: " << end << '\n';
         vector<thread> threads;
         for (int i = 0; i < THREAD_NUMBER; i++)
         {
             threads.push_back(thread(par_sub, mnoz, A, B, start, end, n, steps));
-            //threads.push_back(thread(par_print));
+            //threads.push_back(thread());
             start += GAP;
             if (end + GAP < n)
                 end += GAP;
@@ -196,6 +251,6 @@ int parallel_solve(double *A, double *B, double *X, int n)
     }
     
     //solving prepared matrix
-    reverse_stroke (A, B, X, n);
+    reverse_stroke (A, B, X, n, THREAD_NUMBER);
     return 0;
 }
