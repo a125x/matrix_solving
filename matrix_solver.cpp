@@ -155,7 +155,7 @@ int parallel_solve(double *A, double *B, double *X, int n, int THREAD_NUMBER)
     //maxx is a maximal element in the column
     //and ind_max is its index
     int ind_max = 0;
-    double mnoz = 0., maxx = 0.;
+    double maxx = 0.;
 
     for (int steps = 0; steps < n; steps++)
     {
@@ -176,13 +176,14 @@ int parallel_solve(double *A, double *B, double *X, int n, int THREAD_NUMBER)
         if (maxx < EPS)
             return -1;
 
-        const int GAP = (n - steps) / THREAD_NUMBER;
-        int start = steps+1;
+        int GAP = n / THREAD_NUMBER;
+        int start = 0;
         int end = start;
+          
         if (end + GAP < n)
-                    end += GAP;
-                else
-                    end = n;
+                end += GAP;
+            else
+                end = n;
 
         vector<thread> threads_max;
                 
@@ -202,28 +203,31 @@ int parallel_solve(double *A, double *B, double *X, int n, int THREAD_NUMBER)
                     end += GAP;
                 else
                     end = n;
-                //std::cout << '\n' << "GAP: " << GAP << " Start: " << start << " End: " << end << '\n';
             }
 
             for (int i = 0; i < threads_max.size(); ++i)
             threads_max[i].join();
-
         }
         
-        //mnoz is equal to the element on the diagonal on the
+        //mult is equal to the element on the diagonal on the
         //steps row to the power of -1 and multiplying matrix
         //row and the answer to it creating nice 1-equal 
         //diagonal
-        mnoz = 1. / A[steps * n + steps];
-        B[steps] *= mnoz;
+        double mult = 0;
+
+        mult = 1. / A[steps * n + steps];
+        B[steps] *= mult;
         
         for (int j = steps; j < n; j++)
-            A[steps * n + j] *= mnoz;
+            A[steps * n + j] *= mult;
        
         //removing all the column with this Xsteps below by
         //subtracting steps row from all the rows below 
-        //mnoz times (mnoz becomes equal to Xsteps i for all
+        //mult times (mult becomes equal to Xsteps i for all
         //the is below Xsteps
+        
+        GAP = (n - steps) / THREAD_NUMBER;
+
         start = steps+1;
         end = start;
         if (end + GAP < n)
@@ -231,19 +235,15 @@ int parallel_solve(double *A, double *B, double *X, int n, int THREAD_NUMBER)
                 else
                     end = n;
 
-        //std::cout << '\n' << "GAP: " << GAP << " Start: " << start << " End: " << end << '\n';
         vector<thread> threads;
         for (int i = 0; i < THREAD_NUMBER; i++)
         {
-            threads.push_back(thread(par_sub, mnoz, A, B, start, end, n, steps));
-            //threads.push_back(thread());
+            threads.push_back(thread(par_sub, mult, A, B, start, end, n, steps));
             start += GAP;
             if (end + GAP < n)
                 end += GAP;
             else
                 end = n;
-
-            //std::cout << '\n' << "GAP: " << GAP << " Start: " << start << " End: " << end << '\n';
         }
 
         for (int i = 0; i < threads.size(); ++i)

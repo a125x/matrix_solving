@@ -281,10 +281,10 @@ int main(int argc, char *argv[])
    
     init_B(A, B, n);
     
-    start = std::chrono::high_resolution_clock::now();
+    //start = std::chrono::high_resolution_clock::now();
     //res = solve(A, B, X, n);
-    end = std::chrono::high_resolution_clock::now();
-    auto t2 = std::chrono::duration<double, std::milli>(end - start).count();
+    //end = std::chrono::high_resolution_clock::now();
+    //auto t2 = std::chrono::duration<double, std::milli>(end - start).count();
     
     //printing all the necessary stuff
     for (int i = 0; i < m; i++)
@@ -292,9 +292,9 @@ int main(int argc, char *argv[])
     printf ("\n%s : \nNormErr1 = %e, NormErr2 = %e, NormErrinf = %e; \nRes1 = %e, Res2 = %e, Resinf = %e; \nTime parallel = %.5f; \nK = %d, N = %d, M = %d, T = %d.\n", argv[0], nrmer1, nrmer2, nrmerinf, resid1, resid2, residinf, t1, k, n, m, t);
 
     //cleaning up the memory
-    delete [] A;
-    delete [] B;
-    delete [] X;
+    //delete [] A;
+    //delete [] B;
+    //delete [] X;
 
     return 0;
 }
