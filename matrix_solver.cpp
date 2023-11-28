@@ -33,7 +33,7 @@ void reverse_stroke(double *A, double *B, double *X, int n, int THREAD_NUMBER)
     const int GAP = n / THREAD_NUMBER;
     int start = n-1;
     int end = start;
-    if (end - GAP < n)
+    if (end - GAP >= 0)
             end -= GAP;
         else
             end = 0;
@@ -44,10 +44,12 @@ void reverse_stroke(double *A, double *B, double *X, int n, int THREAD_NUMBER)
     {
         threads.push_back(thread(par_back, A, B, X, n, start, end));
         start -= GAP;
-        if (end - GAP < n)
+        if (end - GAP >= 0)
             end -= GAP;
         else
             end = 0;
+
+        //cout << "\ni: " << i << " start: " << start << " GAP: " << GAP << " end: " << end << "\n";
     }
 
     for (int i = 0; i < threads.size(); ++i)
