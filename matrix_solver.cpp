@@ -30,6 +30,9 @@ void par_back(double *A, double *B, double *X, int n, int start, int end)
 //finding the solution of the given triangular matrix
 void reverse_stroke(double *A, double *B, double *X, int n, int THREAD_NUMBER)
 {
+    if (THREAD_NUMBER > n)
+        THREAD_NUMBER = n;
+
     const int GAP = n / THREAD_NUMBER;
     int start = n-1;
     int end = start;
@@ -42,11 +45,15 @@ void reverse_stroke(double *A, double *B, double *X, int n, int THREAD_NUMBER)
     
     for (int i = 0; i < THREAD_NUMBER; i++)
     {
+        //cout << "GAP " << GAP << " i " << i << " start " << start << " end " << end << '\n';
         threads.push_back(thread(par_back, A, B, X, n, start, end));
         start -= GAP;
-        if (end - GAP >= 0)
+        if (end - GAP > 0)
             end -= GAP;
         else
+            end = 0;
+
+        if (i+2 == THREAD_NUMBER and end != 0)
             end = 0;
 
         //cout << "\ni: " << i << " start: " << start << " GAP: " << GAP << " end: " << end << "\n";
@@ -154,6 +161,9 @@ void par_max(double tmp, int ind_max, double *A, double *B, int start, int cap, 
 //preparing matrix to solve by making it triangular
 int parallel_solve(double *A, double *B, double *X, int n, int THREAD_NUMBER)
 {
+    if (THREAD_NUMBER > n)
+    THREAD_NUMBER = n;
+
     //maxx is a maximal element in the column
     //and ind_max is its index
     int ind_max = 0;
@@ -179,6 +189,7 @@ int parallel_solve(double *A, double *B, double *X, int n, int THREAD_NUMBER)
             return -1;
 
         int GAP = n / THREAD_NUMBER;
+        //cout << "gap in par solve " << GAP << '\n';
         int start = 0;
         int end = start;
           
@@ -205,6 +216,9 @@ int parallel_solve(double *A, double *B, double *X, int n, int THREAD_NUMBER)
                     end += GAP;
                 else
                     end = n;
+
+                if (i+2 == THREAD_NUMBER and end != n)
+                    end = n;
             }
 
             for (int i = 0; i < threads_max.size(); ++i)
@@ -227,9 +241,13 @@ int parallel_solve(double *A, double *B, double *X, int n, int THREAD_NUMBER)
         //subtracting steps row from all the rows below 
         //mult times (mult becomes equal to Xsteps i for all
         //the is below Xsteps
-        
+        int max_threads = THREAD_NUMBER;
+        if (max_threads > (n - steps))
+            max_threads = (n - steps);
+
         GAP = (n - steps) / THREAD_NUMBER;
 
+        //cout << GAP << '\n';
         start = steps+1;
         end = start;
         if (end + GAP < n)
@@ -238,13 +256,16 @@ int parallel_solve(double *A, double *B, double *X, int n, int THREAD_NUMBER)
                     end = n;
 
         vector<thread> threads;
-        for (int i = 0; i < THREAD_NUMBER; i++)
+        for (int i = 0; i < max_threads; i++)
         {
             threads.push_back(thread(par_sub, mult, A, B, start, end, n, steps));
             start += GAP;
             if (end + GAP < n)
                 end += GAP;
             else
+                end = n;
+
+            if (i+2 == max_threads and end != n)
                 end = n;
         }
 

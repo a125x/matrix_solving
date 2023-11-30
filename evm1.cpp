@@ -292,9 +292,9 @@ int main(int argc, char *argv[])
     printf ("\n%s : \nNormErr1 = %e, NormErr2 = %e, NormErrinf = %e; \nRes1 = %e, Res2 = %e, Resinf = %e; \nTime parallel = %.5f; \nK = %d, N = %d, M = %d, T = %d.\n", argv[0], nrmer1, nrmer2, nrmerinf, resid1, resid2, residinf, t1, k, n, m, t);
 
     //cleaning up the memory
-    //delete [] A;
-    //delete [] B;
-    //delete [] X;
+    delete [] A;
+    delete [] B;
+    delete [] X;
 
     return 0;
 }
