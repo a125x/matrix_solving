@@ -1,5 +1,5 @@
 a.out: evm1.o matrix_reader.o matrix_solver.o
-	g++ evm1.o matrix_reader.o matrix_solver.o 
+	g++ evm1.o matrix_reader.o matrix_solver.o -pthread -std=c++11
 evm1.o: evm1.cpp matrix_reader.h matrix_solver.h
 	g++ -c evm1.cpp -pthread -std=c++11
 matrix_reader.o: matrix_reader.cpp matrix_reader.h
